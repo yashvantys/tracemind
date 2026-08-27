@@ -46,3 +46,6 @@ prisma/*.db-journal
 .claude/
 .cursor/
 .devin/
+
+# Prisma generated client
+src/generated/
