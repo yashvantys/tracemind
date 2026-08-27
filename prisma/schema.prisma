@@ -1,0 +1,40 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Incident {
+  id          String   @id @default(uuid())
+  serviceName String
+  environment String
+  errorMessage String
+  stackTrace   String?
+  logs         String?
+  severity    Severity @default(MEDIUM)
+  status      IncidentStatus @default(OPEN)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([serviceName])
+  @@index([environment])
+  @@index([severity])
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum Severity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum IncidentStatus {
+  OPEN
+  INVESTIGATING
+  RESOLVED
+}
