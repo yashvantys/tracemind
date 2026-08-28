@@ -1,3 +1,4 @@
+import { encodeCursor } from "./incident.cursor.js";
 import { IncidentRepository } from "./incident.repository.js";
 import type { CreateIncidentInput, GetIncidentsFilters, UpdateIncidentInput } from "./incident.types.js";
 
@@ -34,25 +35,16 @@ export class IncidentService {
         return await this.incidentRepository.delete(id)
     }
 
-    async getAllIncidents(page: number,
-        limit: number,
-        filters: Omit<GetIncidentsFilters, "skip" | "take">,) {
-        const skip = (page - 1) * limit;
-
-        const { incidents, total } =
-            await this.incidentRepository.findAll({
-                skip,
-                take: limit,
-                ...filters,
-            });
-
+    async getAllIncidents(filters: GetIncidentsFilters) {
+        const result = await this.incidentRepository.findAll(filters);
         return {
-            incidents,
+            incidents: result.incidents,
             pagination: {
-                page,
-                limit,
-                total,
-                totalPages: Math.ceil(total / limit),
+                limit: filters.limit,
+                hasNextPage: result.hasNextPage,
+                nextCursor: result.nextCursor
+                    ? encodeCursor(result.nextCursor)
+                    : null,
             },
         };
     }

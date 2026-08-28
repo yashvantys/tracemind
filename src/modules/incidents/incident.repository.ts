@@ -1,4 +1,5 @@
 import { prisma } from "../../config/database.js";
+import { decodeCursor } from "./incident.cursor.js";
 import type { CreateIncidentInput, GetIncidentsFilters, UpdateIncidentInput } from "./incident.types.js";
 
 export class IncidentRepository {
@@ -35,39 +36,70 @@ export class IncidentRepository {
   }
   async findAll(filters: GetIncidentsFilters) {
     const {
-      skip,
-      take,
+      limit,
+      cursor,
       severity,
       status,
       serviceName,
       environment,
     } = filters;
+    const decodedCursor = cursor
+      ? decodeCursor(cursor)
+      : undefined;
 
     const where = {
       ...(severity && { severity }),
       ...(status && { status }),
       ...(serviceName && { serviceName }),
       ...(environment && { environment }),
+      ...(decodedCursor && {
+        OR: [
+          {
+            createdAt: {
+              lt: new Date(decodedCursor.createdAt),
+            },
+          },
+          {
+            createdAt: new Date(decodedCursor.createdAt),
+            id: {
+              lt: decodedCursor.id,
+            },
+          },
+        ],
+      }),
     };
 
-    const [incidents, total] = await Promise.all([
-      prisma.incident.findMany({
-        where,
-        skip,
-        take,
-        orderBy: {
+    const incidents = await prisma.incident.findMany({
+      where,
+      take: limit + 1,
+      orderBy: [
+        {
           createdAt: "desc",
         },
-      }),
+        {
+          id: "desc",
+        },
+      ],
+    });
 
-      prisma.incident.count({
-        where,
-      }),
-    ]);
+    const hasNextPage = incidents.length > limit;
+
+    if (hasNextPage) {
+      incidents.pop();
+    }
+
+    const lastIncident = incidents.at(-1);
+    const nextCursor = lastIncident
+      ? {
+        createdAt: lastIncident.createdAt.toISOString(),
+        id: lastIncident.id,
+      }
+      : null;
 
     return {
       incidents,
-      total,
+      hasNextPage,
+      nextCursor,
     };
   }
 }

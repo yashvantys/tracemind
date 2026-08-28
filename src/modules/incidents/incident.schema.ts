@@ -40,13 +40,13 @@ export const updateIncidentSchema = z.object({
 })
 export type UpdateIncidentRequest = z.infer<typeof updateIncidentSchema>
 export const getIncidentsQuerySchema = z.object({
-  page: z.coerce.number().int().positive().default(1),
   limit: z.coerce
     .number()
     .int()
     .positive()
     .max(100)
     .default(10),
+  cursor: z.string().optional(),
   severity: z
     .enum(["LOW", "MEDIUM", "HIGH", "CRITICAL"])
     .optional(),

@@ -16,8 +16,8 @@ export interface UpdateIncidentInput {
   status?: "OPEN" | "INVESTIGATING" | "RESOLVED";
 }
 export interface GetIncidentsFilters {
-  skip: number;
-  take: number;
+  limit: number;
+  cursor?: string;
   severity?: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
   status?: "OPEN" | "INVESTIGATING" | "RESOLVED";
   serviceName?: string;

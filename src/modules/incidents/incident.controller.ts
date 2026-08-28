@@ -61,30 +61,10 @@ export class IncidentController {
         reply: FastifyReply,
     ) {
         const query = getIncidentsQuerySchema.parse(request.query);
-        const {
-            page,
-            limit,
-            severity,
-            status,
-            serviceName,
-            environment,
-        } = query;
-
-        const result = await incidentService.getAllIncidents(
-            page,
-            limit,
-            {
-                severity,
-                status,
-                serviceName,
-                environment,
-            },
-        );
-
+        const result = await incidentService.getAllIncidents(query);
         return reply.code(200).send({
             success: true,
             data: result,
         });
     }
-
 }
