@@ -246,28 +246,31 @@ tracemind/
 
 ### Phase 1 — Backend Foundation
 
-* [x] Project initialization
-* [x] TypeScript configuration
-* [x] Fastify server
-* [x] CORS configuration
-* [x] Health check endpoint
+- [x] Project initialization
+- [x] TypeScript configuration
+- [x] Fastify server
+- [x] CORS configuration
+- [x] Health check endpoint
+- [x] Environment configuration
 
 ### Phase 2 — Data Layer
 
-* [ ] PostgreSQL setup
-* [ ] Prisma configuration
-* [ ] Incident data model
-* [ ] pgvector extension
-* [ ] Database migrations
-* [ ] Repository layer
+- [x] PostgreSQL setup
+- [x] Prisma configuration
+- [x] Incident data model
+- [x] Database migrations
+- [x] Prisma Client generation
+- [x] Repository layer
 
 ### Phase 3 — Incident Ingestion
 
-* [ ] Incident creation API
-* [ ] Error and stack-trace ingestion
-* [ ] Incident validation
-* [ ] Incident status/severity
-* [ ] Incident metadata
+- [x] Incident creation API
+- [x] Error and stack-trace ingestion
+- [x] Incident validation
+- [x] Incident status/severity
+- [x] Incident retrieval API
+- [ ] Incident update API
+- [ ] Incident deletion API
 
 ### Phase 4 — Embeddings & RAG
 
