@@ -9,8 +9,22 @@ export async function incidentRoutes(app: FastifyInstance) {
     incidentController.createIncident.bind(incidentController),
   );
 
+  app.put(
+    "/:id",
+    incidentController.updateIncident.bind(incidentController)
+  )
+  app.delete(
+    "/:id",
+    incidentController.deleteIncident.bind(incidentController)
+  )
+
   app.get(
     "/:id",
     incidentController.getIncidentById.bind(incidentController),
+  );
+
+  app.get(
+    "/",
+    incidentController.getAllIncidents.bind(incidentController),
   );
 }

@@ -1,5 +1,5 @@
 import { prisma } from "../../config/database.js";
-import type { CreateIncidentInput } from "./incident.types.js";
+import type { CreateIncidentInput, GetIncidentsFilters, UpdateIncidentInput } from "./incident.types.js";
 
 export class IncidentRepository {
   async create(data: CreateIncidentInput) {
@@ -20,5 +20,54 @@ export class IncidentRepository {
         id,
       },
     });
+  }
+
+  async update(id: string, data: UpdateIncidentInput) {
+    return prisma.incident.update({
+      where: { id },
+      data,
+    });
+  }
+  async delete(id: string) {
+    return prisma.incident.delete({
+      where: { id }
+    })
+  }
+  async findAll(filters: GetIncidentsFilters) {
+    const {
+      skip,
+      take,
+      severity,
+      status,
+      serviceName,
+      environment,
+    } = filters;
+
+    const where = {
+      ...(severity && { severity }),
+      ...(status && { status }),
+      ...(serviceName && { serviceName }),
+      ...(environment && { environment }),
+    };
+
+    const [incidents, total] = await Promise.all([
+      prisma.incident.findMany({
+        where,
+        skip,
+        take,
+        orderBy: {
+          createdAt: "desc",
+        },
+      }),
+
+      prisma.incident.count({
+        where,
+      }),
+    ]);
+
+    return {
+      incidents,
+      total,
+    };
   }
 }

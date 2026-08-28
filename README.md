@@ -354,6 +354,51 @@ Response:
   "service": "tracemind"
 }
 ```
+---
+### Create Incident
+
+POST /api/v1/incidents
+Content-Type: application/json
+
+Request:
+
+{
+  "serviceName": "payment-service",
+  "environment": "production",
+  "errorMessage": "Database connection timeout",
+  "stackTrace": "Error: connection timeout",
+  "logs": "Connection pool exhausted"
+}
+### Get Incident
+GET /api/v1/incidents/:id
+
+Returns the incident stored in PostgreSQL.
+
+
+### Add a Backend Architecture section
+
+This is useful for interviews:
+
+```markdown
+## 🔄 Backend Request Flow
+
+```text
+HTTP Request
+     ↓
+Fastify Route
+     ↓
+Controller
+     ↓
+Zod Validation
+     ↓
+Service
+     ↓
+Repository
+     ↓
+Prisma
+     ↓
+PostgreSQL
+
 
 More APIs will be added incrementally as each module is implemented.
 
