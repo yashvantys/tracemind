@@ -89,12 +89,13 @@ export class IncidentRepository {
     }
 
     const lastIncident = incidents.at(-1);
-    const nextCursor = lastIncident
-      ? {
-        createdAt: lastIncident.createdAt.toISOString(),
-        id: lastIncident.id,
-      }
-      : null;
+    const nextCursor =
+      hasNextPage && lastIncident
+        ? {
+          createdAt: lastIncident.createdAt.toISOString(),
+          id: lastIncident.id,
+        }
+        : null;
 
     return {
       incidents,
