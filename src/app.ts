@@ -1,6 +1,7 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
 import { incidentRoutes } from "./modules/incidents/incident.routes.js";
+import { registerErrorHandler } from "./middleware/error.middleware.js";
 
 export function buildApp() {
   const app = Fastify({
@@ -10,7 +11,7 @@ export function buildApp() {
   app.register(cors, {
     origin: true,
   });
-
+  registerErrorHandler(app);
   app.get("/health", async () => {
     return {
       status: "ok",

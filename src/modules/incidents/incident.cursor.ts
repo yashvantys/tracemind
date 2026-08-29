@@ -1,3 +1,5 @@
+import { BadRequestError } from "../../utils/error.js";
+
 interface IncidentCursor {
   createdAt: string;
   id: string;
@@ -21,7 +23,10 @@ export function decodeCursor(cursor: string): IncidentCursor {
       typeof parsed.createdAt !== "string" ||
       typeof parsed.id !== "string"
     ) {
-      throw new Error("Invalid cursor");
+      throw new BadRequestError(
+        "Invalid pagination cursor",
+        "INVALID_CURSOR",
+      );
     }
 
     return {
@@ -29,6 +34,9 @@ export function decodeCursor(cursor: string): IncidentCursor {
       id: parsed.id,
     };
   } catch {
-    throw new Error("Invalid cursor");
+    throw new BadRequestError(
+      "Invalid pagination cursor",
+      "INVALID_CURSOR",
+    );
   }
 }
