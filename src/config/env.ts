@@ -9,6 +9,12 @@ const envSchema = z.object({
     .default("development"),
   OPENAI_API_KEY: z.string().optional(),
   REDIS_URL: z.string().optional(),
+  RAG_MAX_RESULTS: z.coerce.number().int().positive().max(100).default(5),
+  RAG_SIMILARITY_THRESHOLD: z.coerce
+    .number()
+    .min(0)
+    .max(1)
+    .default(0.7),
 });
 
 export const env = envSchema.parse(process.env);

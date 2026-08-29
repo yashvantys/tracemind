@@ -2,15 +2,33 @@ import { NotFoundError } from "../../utils/error.js";
 import { encodeCursor } from "./incident.cursor.js";
 import { IncidentRepository } from "./incident.repository.js";
 import type { CreateIncidentInput, GetIncidentsFilters, UpdateIncidentInput } from "./incident.types.js";
+import { EmbeddingService } from "../embeddings/embedding.service.js";
+import { EmbeddingRepository } from "../embeddings/embedding.repository.js";
 
 export class IncidentService {
     private readonly incidentRepository: IncidentRepository;
+    private readonly embeddingService: EmbeddingService;
+    private readonly embeddingRepository: EmbeddingRepository;
     constructor() {
         this.incidentRepository = new IncidentRepository();
+        this.embeddingService = new EmbeddingService();
+        this.embeddingRepository = new EmbeddingRepository();
     }
 
     async createIncident(data: CreateIncidentInput) {
         const incident = await this.incidentRepository.create(data);
+        const embedding =
+            await this.embeddingService.generateEmbedding({
+                serviceName: incident.serviceName,
+                environment: incident.environment,
+                errorMessage: incident.errorMessage,
+                stackTrace: incident.stackTrace,
+                logs: incident.logs,
+            });
+        await this.embeddingRepository.save(
+            incident.id,
+            embedding,
+        );
         return incident;
     }
 
@@ -36,7 +54,7 @@ export class IncidentService {
     }
     async deleteIncident(id: string) {
         const incident = await this.incidentRepository.findById(id);
-        if (!incident) {            
+        if (!incident) {
             throw new NotFoundError(
                 "Incident not found",
                 "INCIDENT_NOT_FOUND",

@@ -246,40 +246,42 @@ tracemind/
 
 ### Phase 1 — Backend Foundation
 
-- [x] Project initialization
-- [x] TypeScript configuration
-- [x] Fastify server
-- [x] CORS configuration
-- [x] Health check endpoint
+- [x] Fastify + TypeScript
 - [x] Environment configuration
+- [x] CORS
+- [x] Health check
+- [x] Global error handling
 
-### Phase 2 — Data Layer
+### Phase 2 — Database
 
-- [x] PostgreSQL setup
-- [x] Prisma configuration
-- [x] Incident data model
-- [x] Database migrations
-- [x] Prisma Client generation
-- [x] Repository layer
+- [x] PostgreSQL 17
+- [x] Prisma ORM
+- [x] Prisma migrations
+- [x] Docker Compose
+- [x] pgvector 0.8.6
+- [x] Incident model
+- [x] `vector(1536)` embedding column
 
-### Phase 3 — Incident Ingestion
+### Phase 3 — Incident Management
 
-- [x] Incident creation API
-- [x] Error and stack-trace ingestion
-- [x] Incident validation
-- [x] Incident status/severity
-- [x] Incident retrieval API
-- [ ] Incident update API
-- [ ] Incident deletion API
+- [x] Create incident
+- [x] Get incident by ID
+- [x] Update incident
+- [x] Delete incident
+- [x] Get all incidents
+- [x] Filtering
+- [x] Cursor pagination
 
-### Phase 4 — Embeddings & RAG
+### Phase 4 — Semantic Search
 
-* [ ] Text preparation
-* [ ] Embedding generation
-* [ ] Vector storage
-* [ ] Similarity search
-* [ ] Historical incident retrieval
-* [ ] RAG pipeline
+- [x] OpenAI embeddings
+- [x] `text-embedding-3-small`
+- [x] 1536-dimensional embeddings
+- [x] Store embeddings in pgvector
+- [x] Cosine similarity search
+- [x] Configurable similarity threshold
+- [x] Configurable result limit
+- [x] Similar incident retrieval
 
 ### Phase 5 — AI Analysis
 

@@ -18,6 +18,7 @@ model Incident {
   status      IncidentStatus @default(OPEN)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  embedding Unsupported("vector(1536)")?
 
   @@index([serviceName])
   @@index([environment])
