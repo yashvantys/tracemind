@@ -22,6 +22,7 @@ export class RagService {
   async analyzeIncident(
     incident: RagInput,
   ): Promise<RagAnalysis> {
+
     // 1. Find similar historical incidents
     const similarIncidents =
       await this.embeddingService.findSimilarIncidents(
@@ -64,6 +65,23 @@ export class RagService {
       );
     }
 
-    return JSON.parse(content) as RagAnalysis;
+    // 4. Parse AI response
+    const analysis = JSON.parse(content) as Omit<
+      RagAnalysis,
+      "similarIncidents"
+    >;
+
+    // 5. Add database retrieval information
+    return {
+      ...analysis,
+      similarIncidents: similarIncidents.map(
+        (incident) => ({
+          incidentId: incident.id,
+          similarity: Number(incident.similarity),
+          serviceName: incident.serviceName,
+          errorMessage: incident.errorMessage,
+        }),
+      ),
+    };
   }
 }
