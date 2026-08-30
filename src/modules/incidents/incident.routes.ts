@@ -27,4 +27,8 @@ export async function incidentRoutes(app: FastifyInstance) {
     "/",
     incidentController.getAllIncidents.bind(incidentController),
   );
+  app.post(
+    "/:id/analyze",
+    incidentController.analyzeIncident.bind(incidentController),
+  );
 }

@@ -1,8 +1,11 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { createIncidentSchema, getIncidentsQuerySchema, updateIncidentSchema } from "./incident.schema.js";
 import { IncidentService } from "./incident.service.js";
+import { RagService } from "../rag/rag.service.js";
+import { BadRequestError, NotFoundError } from "../../utils/error.js";
 
 const incidentService = new IncidentService();
+const ragService = new RagService();
 export class IncidentController {
     async createIncident(
         request: FastifyRequest,
@@ -62,6 +65,47 @@ export class IncidentController {
     ) {
         const query = getIncidentsQuerySchema.parse(request.query);
         const result = await incidentService.getAllIncidents(query);
+        return reply.code(200).send({
+            success: true,
+            data: result,
+        });
+    }
+
+    async analyzeIncident(
+        request: FastifyRequest<{
+            Params: {
+                id: string;
+            };
+        }>,
+        reply: FastifyReply,
+    ) {
+        const { id } = request.params;
+
+        if (!id) {
+            throw new BadRequestError(
+                "Please provide incident id",
+                "INCIDENT_ID_REQUIRED",
+            );
+        }
+
+        const incident =
+            await incidentService.getIncidentById(id);
+
+        if (!incident) {
+            throw new NotFoundError(
+                "Incident not found",
+                "INCIDENT_NOT_FOUND",
+            );
+        }
+
+        const result = await ragService.analyzeIncident({
+            serviceName: incident.serviceName,
+            environment: incident.environment,
+            errorMessage: incident.errorMessage,
+            stackTrace: incident.stackTrace,
+            logs: incident.logs,
+        });
+
         return reply.code(200).send({
             success: true,
             data: result,

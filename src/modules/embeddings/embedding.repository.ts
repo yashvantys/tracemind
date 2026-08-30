@@ -1,6 +1,6 @@
 import { prisma } from "../../config/database.js";
 import { env } from "../../config/env.js";
-
+import type { RagIncident } from "../rag/rag.types.js";
 export class EmbeddingRepository {
     async save(
         incidentId: string,
@@ -18,7 +18,7 @@ export class EmbeddingRepository {
         embedding: number[],
         limit = env.RAG_MAX_RESULTS,
         minSimilarity = env.RAG_SIMILARITY_THRESHOLD,
-    ) {
+    ): Promise<RagIncident[]> {
         const vector = `[${embedding.join(",")}]`;
 
         return prisma.$queryRaw`
