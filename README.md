@@ -283,15 +283,18 @@ tracemind/
 - [x] Configurable result limit
 - [x] Similar incident retrieval
 
-### Phase 5 — AI Analysis
+### Phase 5 — RAG & AI Diagnosis
 
-* [ ] OpenAI integration
-* [ ] Prompt engineering
-* [ ] Structured AI response
-* [ ] Root-cause hypothesis
-* [ ] Evidence extraction
-* [ ] Remediation recommendations
-* [ ] Severity classification
+- [x] RAG context builder
+- [x] RAG prompt
+- [x] OpenAI-powered incident analysis
+- [x] Root cause analysis
+- [x] Evidence extraction
+- [x] Remediation recommendations
+- [x] AI confidence score
+- [x] Structured JSON response
+- [x] Incident analysis API
+- [x] Semantic historical incident retrieval
 
 ### Phase 6 — Performance
 
@@ -357,24 +360,16 @@ Response:
 }
 ```
 ---
-### Create Incident
+### Incident APIs
 
-POST /api/v1/incidents
-Content-Type: application/json
-
-Request:
-
-{
-  "serviceName": "payment-service",
-  "environment": "production",
-  "errorMessage": "Database connection timeout",
-  "stackTrace": "Error: connection timeout",
-  "logs": "Connection pool exhausted"
-}
-### Get Incident
-GET /api/v1/incidents/:id
-
-Returns the incident stored in PostgreSQL.
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/api/v1/incidents` | Create incident |
+| GET | `/api/v1/incidents` | List incidents |
+| GET | `/api/v1/incidents/:id` | Get incident |
+| PUT | `/api/v1/incidents/:id` | Update incident |
+| DELETE | `/api/v1/incidents/:id` | Delete incident |
+| POST | `/api/v1/incidents/:id/analyze` | AI/RAG incident analysis |
 
 
 ### Add a Backend Architecture section
@@ -405,6 +400,8 @@ PostgreSQL
 More APIs will be added incrementally as each module is implemented.
 
 ---
+
+
 
 ## 🧠 AI Diagnosis
 
