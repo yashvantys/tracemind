@@ -8,6 +8,7 @@ import { env } from "../../config/env.js";
 import type { IncidentCreatedEvent } from "./event.types.js";
 import { EmbeddingWorker } from "../embeddings/embedding.worker.js";
 import { EventRepository } from "./event.repository.js";
+import { logger } from "../../shared/logger.js";
 
 const sqsClient = new SQSClient({
     region: env.AWS_REGION,
@@ -42,9 +43,9 @@ export class EventConsumer {
                 await this.eventRepository.exists(event.eventId);
 
             if (alreadyProcessed) {
-                console.log(
-                    `Event already processed: ${event.eventId}`,
-                );
+                logger.info("Event already processed", {
+                    eventId: event.eventId,
+                });
 
                 // Delete duplicate message
                 await sqsClient.send(
@@ -56,8 +57,17 @@ export class EventConsumer {
 
                 continue;
             }
-            console.log("Received event:", event);
+
+            logger.info("Received incident event", {
+                eventId: event.eventId,
+                eventType: event.eventType,
+                incidentId: event.incidentId,
+            });
             await this.processEvent(event);
+            logger.info("Incident embedding generated", {
+                eventId: event.eventId,
+                incidentId: event.incidentId,
+            });
             await this.eventRepository.markProcessed(
                 event.eventId,
                 event.eventType,
@@ -70,9 +80,9 @@ export class EventConsumer {
                 }),
             );
 
-            console.log(
-                `Message deleted: ${event.eventId}`,
-            );
+            logger.info("SQS message deleted", {
+                eventId: event.eventId,
+            });
         }
     }
 

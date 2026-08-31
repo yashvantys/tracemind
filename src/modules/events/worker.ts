@@ -1,16 +1,36 @@
+import { logger } from "../../shared/logger.js";
 import { EventConsumer } from "./consumer.js";
+
 const consumer = new EventConsumer();
 
-console.log("TraceMind event worker started");
+let shuttingDown = false;
 
-while (true) {
-  try {
-    await consumer.receiveMessages();
-  } catch (error) {
-    console.error("Worker error:", error);
+const shutdown = (signal: string) => {
+    console.log(`Received ${signal}. Shutting down worker...`);
+    shuttingDown = true;
+};
 
-    await new Promise((resolve) =>
-      setTimeout(resolve, 5000),
-    );
-  }
+process.on("SIGINT", () => shutdown("SIGINT"));
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+
+logger.info("TraceMind event worker started");
+
+while (!shuttingDown) {
+    try {
+        await consumer.receiveMessages();
+    } catch (error) {
+        logger.error("Worker error", {
+            error: error instanceof Error
+                ? error.message
+                : String(error),
+        });
+
+        if (!shuttingDown) {
+            await new Promise((resolve) =>
+                setTimeout(resolve, 5000),
+            );
+        }
+    }
 }
+
+console.log("TraceMind event worker stopped");
