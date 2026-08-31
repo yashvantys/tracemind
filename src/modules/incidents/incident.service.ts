@@ -4,31 +4,31 @@ import { IncidentRepository } from "./incident.repository.js";
 import type { CreateIncidentInput, GetIncidentsFilters, UpdateIncidentInput } from "./incident.types.js";
 import { EmbeddingService } from "../embeddings/embedding.service.js";
 import { EmbeddingRepository } from "../embeddings/embedding.repository.js";
+import { EventPublisher } from "../events/publisher.js";
+import { randomUUID } from "node:crypto";
+import type { IncidentCreatedEvent } from "../events/event.types.js";
 
 export class IncidentService {
     private readonly incidentRepository: IncidentRepository;
     private readonly embeddingService: EmbeddingService;
     private readonly embeddingRepository: EmbeddingRepository;
+    private readonly eventPublisher: EventPublisher;
     constructor() {
         this.incidentRepository = new IncidentRepository();
         this.embeddingService = new EmbeddingService();
         this.embeddingRepository = new EmbeddingRepository();
+        this.eventPublisher = new EventPublisher();
     }
 
     async createIncident(data: CreateIncidentInput) {
         const incident = await this.incidentRepository.create(data);
-        const embedding =
-            await this.embeddingService.generateEmbedding({
-                serviceName: incident.serviceName,
-                environment: incident.environment,
-                errorMessage: incident.errorMessage,
-                stackTrace: incident.stackTrace,
-                logs: incident.logs,
-            });
-        await this.embeddingRepository.save(
-            incident.id,
-            embedding,
-        );
+        const event: IncidentCreatedEvent = {
+            eventId: randomUUID(),
+            eventType: "INCIDENT_CREATED",
+            occurredAt: new Date().toISOString(),
+            incidentId: incident.id,
+        };
+        await this.eventPublisher.publishIncidentCreated(event);
         return incident;
     }
 

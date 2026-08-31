@@ -15,6 +15,15 @@ const envSchema = z.object({
     .min(0)
     .max(1)
     .default(0.7),
+  AWS_REGION: z.string().default("ap-south-1"),
+  AWS_SQS_ENDPOINT: z
+    .string()
+    .url()
+    .default("http://localhost:4566"),
+
+  AWS_SQS_INCIDENT_QUEUE_URL: z
+    .string()
+    .url(),
 });
 
 export const env = envSchema.parse(process.env);

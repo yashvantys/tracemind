@@ -22,3 +22,8 @@ export * from './enums.js';
  * 
  */
 export type Incident = Prisma.IncidentModel
+/**
+ * Model ProcessedEvent
+ * 
+ */
+export type ProcessedEvent = Prisma.ProcessedEventModel

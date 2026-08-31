@@ -9,4 +9,5 @@
  * 🟢 You can import this file directly.
  */
 export type * from './models/Incident.js'
+export type * from './models/ProcessedEvent.js'
 export type * from './commonInputTypes.js'
