@@ -8,8 +8,6 @@ It ingests application errors, logs, and stack traces, retrieves relevant histor
 
 The project is being built with a production-oriented backend architecture using **Fastify, TypeScript, PostgreSQL, pgvector, OpenAI, Redis, and AWS event-driven services**.
 
----
-
 ## 🎯 Problem
 
 Production debugging often requires engineers to:
@@ -45,13 +43,13 @@ Production Error / Logs / Stack Trace
        Generate Embedding
                 │
                 ▼
-        Similarity Search
+        Similarity Search (threshold >0.75 + self-exclusion)
                 │
                 ▼
-          RAG Context
+          RAG Context (sanitized + truncated)
                 │
                 ▼
-          OpenAI LLM
+          OpenAI LLM (with Zod validation)
                 │
                 ▼
    ┌─────────────────────────┐
@@ -64,7 +62,7 @@ Production Error / Logs / Stack Trace
 
 ---
 
-## 🏗️ Architecture
+## 🏗 Architecture
 
 TraceMind currently uses a modular backend architecture.
 
@@ -89,18 +87,20 @@ TraceMind currently uses a modular backend architecture.
                     │                           │
                     ▼                           ▼
              PostgreSQL                  Embedding Service
+                    │                    (truncation + validation + retry)
                     │                           │
                     │                           ▼
                     │                    OpenAI Embeddings
                     │                           │
                     ▼                           ▼
               pgvector ◄────────────── Embedding Storage
+              HNSW index                    │
+                    │                       │
+                    ▼                       │
+             Similarity Search (0.75 threshold, excludeId)
                     │
                     ▼
-             Similarity Search
-                    │
-                    ▼
-               RAG Service
+               RAG Service (injection protection + Zod)
                     │
                     ▼
                 OpenAI LLM
@@ -109,9 +109,9 @@ TraceMind currently uses a modular backend architecture.
           Incident Diagnosis
 ```
 
-### Planned asynchronous architecture
+### Asynchronous architecture (SHIPPED - Phase 7)
 
-As the system evolves, expensive AI workloads will move to background workers:
+Expensive AI workloads now run in background workers:
 
 ```text
 Incident API
@@ -125,16 +125,19 @@ AWS SQS / SNS
      ▼
 Background Workers
      │
-     ├── Embedding Worker
+     ├── Embedding Worker (idempotent + retry + DLQ)
      │
      ├── RAG Worker
      │
      └── AI Analysis Worker
+           │
+           ▼
+        DLQ (Dead Letter Queue)
 ```
 
 ---
 
-## 🛠️ Technology Stack
+## 🛠 Technology Stack
 
 ### Backend
 
@@ -148,25 +151,31 @@ Background Workers
 * PostgreSQL 17
 * pgvector 0.8.6
 * Prisma ORM
+* HNSW Index: `CREATE INDEX incident_embedding_hnsw ON "Incident" USING hnsw (embedding vector_cosine_ops)`
 
 ### AI / GenAI
 
 * OpenAI API
 * `text-embedding-3-small`
-* 1536-dimensional embeddings
-* Retrieval-Augmented Generation (RAG)
-* Vector similarity search
-* LLM-based incident analysis
+* 1536-dimensional embeddings (validated + NaN checked)
+* Retrieval-Augmented Generation (RAG) with threshold filtering
+* Vector similarity search: `1 - (embedding <=> vector)` cosine
+* Prompt injection protection via XML tags
+* LLM-based incident analysis with Zod validation
+* Token safety: truncation + cost tracking (planned)
 
 ### Caching
 
-* Redis *(planned)*
+* Redis *(in progress - HNSW done, caching next)*
 
-### Event-Driven Processing
+### Event-Driven Processing (SHIPPED)
 
-* AWS SQS *(planned)*
-* AWS SNS *(planned)*
-* Background workers *(planned)*
+* AWS SQS - implemented
+* AWS SNS - implemented
+* Background workers - implemented
+* Retry with exponential backoff
+* Dead-letter queue strategy
+* Idempotent processing
 
 ### API / Communication
 
@@ -175,13 +184,13 @@ Background Workers
 
 ### Frontend
 
-* React *(planned)*
+* React *(planned - Next.js dashboard next)*
 
 ### DevOps / Observability
 
 * Docker
 * GitHub Actions *(planned)*
-* AWS *(planned)*
+* AWS *(partial - SQS/SNS done)*
 * Structured logging
 * Application monitoring *(planned)*
 
@@ -245,7 +254,7 @@ tracemind/
 
 # 🚀 Current Status
 
-## Phase 1 — Backend Foundation
+## Phase 1 — Backend Foundation ✅
 
 * [x] Fastify + TypeScript
 * [x] Environment configuration
@@ -255,7 +264,7 @@ tracemind/
 * [x] Centralized application errors
 * [x] Zod validation
 
-## Phase 2 — Database
+## Phase 2 — Database ✅
 
 * [x] PostgreSQL 17
 * [x] Prisma ORM
@@ -265,11 +274,11 @@ tracemind/
 * [x] Incident model
 * [x] `vector(1536)` embedding column
 
-## Phase 3 — Incident Management
+## Phase 3 — Incident Management ✅
 
 * [x] Create incident
 * [x] Get incident by ID
-* [x] Update incident
+* [x] Update incident (with re-embedding)
 * [x] Delete incident
 * [x] Get all incidents
 * [x] Filtering
@@ -277,64 +286,71 @@ tracemind/
 * [x] Invalid request handling
 * [x] Not-found handling
 
-## Phase 4 — Semantic Search
+## Phase 4 — Semantic Search ✅ HARDENED
 
 * [x] OpenAI embeddings
 * [x] `text-embedding-3-small`
-* [x] 1536-dimensional embeddings
+* [x] 1536-dimensional embeddings (validated, NaN-checked)
+* [x] Token truncation (8191 limit safety)
 * [x] Store embeddings in pgvector
-* [x] Cosine similarity search
-* [x] Configurable similarity threshold
-* [x] Configurable result limit
+* [x] Cosine similarity search `1 - (embedding <=> vector)`
+* [x] Configurable similarity threshold (0.75)
+* [x] Self-exclusion (`excludeId` to prevent 1.0 self-match)
+* [x] HNSW index `vector_cosine_ops`
+* [x] Retry with backoff on 429
 * [x] Similar historical incident retrieval
 
-## Phase 5 — RAG & AI Diagnosis
+## Phase 5 — RAG & AI Diagnosis ✅ HARDENED
 
 * [x] RAG context builder
-* [x] RAG prompt
-* [x] OpenAI-powered incident analysis
+* [x] RAG prompt with injection protection (`<current>` / `<history>` tags)
+* [x] Input sanitization + truncation (300 error, 400-800 stack/logs)
+* [x] OpenAI-powered incident analysis (`gpt-4o-mini`)
+* [x] Similarity threshold filtering to prevent RAG poisoning
+* [x] Early return if no relevant history
 * [x] Root cause analysis
 * [x] Evidence extraction
 * [x] Remediation recommendations
-* [x] AI confidence score
-* [x] Structured JSON response
+* [x] AI confidence score with calibration
+* [x] Structured JSON response with Zod validation
 * [x] Incident analysis API
-* [x] Semantic historical incident retrieval
+* [x] Token usage logging
 
-## Phase 6 — Performance
+## Phase 6 — Performance 🔄 IN PROGRESS
 
+* [x] Vector indexing / HNSW optimization
 * [ ] Redis caching
 * [ ] Cache key strategy
 * [ ] Cache invalidation
 * [ ] Repeat-incident optimization
-* [ ] Vector indexing / HNSW optimization
+* [ ] Cost tracking dashboard
 
-## Phase 7 — Event-Driven Processing
+## Phase 7 — Event-Driven Processing ✅ SHIPPED
 
-* [ ] AWS SQS integration
-* [ ] AWS SNS integration
-* [ ] Background workers
-* [ ] Retry handling
-* [ ] Dead-letter queue strategy
-* [ ] Idempotent processing
+* [x] AWS SQS integration
+* [x] AWS SNS integration
+* [x] Background workers
+* [x] Retry handling (exponential backoff)
+* [x] Dead-letter queue strategy
+* [x] Idempotent processing
+* [x] Event publishing with error isolation
 
-## Phase 8 — Streaming
+## Phase 8 — Streaming 📋
 
 * [ ] SSE endpoint
 * [ ] Streaming AI responses
 * [ ] Connection management
 * [ ] Error handling
 
-## Phase 9 — Frontend
+## Phase 9 — Frontend 📋 NEXT
 
-* [ ] React application
+* [ ] React / Next.js application
 * [ ] Incident dashboard
-* [ ] Incident details
-* [ ] AI diagnosis view
-* [ ] Evidence display
+* [ ] Incident details + AI diagnosis view
+* [ ] Evidence display + similarity scores
 * [ ] Remediation recommendations
 
-## Phase 10 — Production Readiness
+## Phase 10 — Production Readiness 📋
 
 * [ ] Authentication
 * [ ] Authorization
@@ -412,8 +428,6 @@ Next page:
 GET /api/v1/incidents?limit=10&cursor=...
 ```
 
-The cursor uses incident ordering information to provide deterministic pagination without large database offsets.
-
 ---
 
 ## Incident Filtering
@@ -422,17 +436,8 @@ Supported filters include:
 
 ```http
 GET /api/v1/incidents?severity=HIGH
-```
-
-```http
 GET /api/v1/incidents?status=OPEN
-```
-
-```http
 GET /api/v1/incidents?serviceName=payment-service
-```
-
-```http
 GET /api/v1/incidents?environment=production
 ```
 
@@ -459,21 +464,28 @@ Response:
     "rootCause": "Database connection pool exhaustion",
     "evidence": [
       "The incident indicates that the database connection pool has reached its maximum capacity.",
-      "Similar historical incidents show database connection exhaustion."
+      "Similar historical incidents show database connection exhaustion at 0.96 similarity."
     ],
     "remediation": [
       "Review database connection pool configuration.",
       "Investigate long-running database transactions.",
       "Ensure database connections are released promptly."
     ],
-    "confidence": 0.9
+    "confidence": 0.9,
+    "similarIncidents": [
+      { "id": "...", "similarity": 0.966 },
+      { "id": "...", "similarity": 0.896 }
+    ]
   }
 }
 ```
 
-The system uses historical incidents as supporting evidence rather than treating retrieved incidents as absolute truth.
-
-AI confidence represents the model's assessment based on the available evidence and should not be interpreted as an objective probability.
+**Production hardening:**
+- Only incidents >0.75 similarity included (prevents RAG poisoning)
+- Self excluded from results
+- Inputs sanitized and truncated
+- LLM JSON validated via Zod
+- Low confidence fallback when no relevant history
 
 ---
 
@@ -488,13 +500,13 @@ Controller
      ↓
 Zod Validation
      ↓
-Service
+Service (with error isolation)
      ↓
 Repository
      ↓
 Prisma
      ↓
-PostgreSQL
+PostgreSQL + pgvector (HNSW)
 ```
 
 For AI analysis:
@@ -504,52 +516,64 @@ HTTP Request
      ↓
 Incident Controller
      ↓
-RAG Service
+RAG Service (threshold 0.75 + Zod validation)
      ↓
-Embedding Service
+Embedding Service (truncation + validation + retry)
      ↓
-OpenAI Embeddings
+OpenAI Embeddings (1536 dim)
      ↓
-pgvector Similarity Search
+pgvector Similarity Search (HNSW + excludeId)
      ↓
-RAG Context Builder
+RAG Context Builder (sanitized + truncated)
      ↓
-OpenAI LLM
+OpenAI LLM (gpt-4o-mini)
      ↓
-Structured AI Diagnosis
+Structured AI Diagnosis (validated)
+```
+
+Async flow:
+
+```text
+Incident Created -> PostgreSQL -> SQS -> Worker (Embedding + RAG) -> DLQ on failure
 ```
 
 ---
 
-# 🔎 Semantic Search
+# 🔎 Semantic Search - Production Grade
 
-TraceMind converts incidents into vector embeddings using OpenAI's `text-embedding-3-small` model.
+TraceMind converts incidents into vector embeddings using OpenAI's `text-embedding-3-small`.
 
-Each embedding contains **1536 dimensions** and is stored using PostgreSQL + pgvector.
+Each embedding contains **1536 dimensions**, validated and stored using PostgreSQL + pgvector with HNSW index.
 
-Example retrieval:
+```sql
+-- Performance index
+CREATE INDEX incident_embedding_hnsw 
+ON "Incident" USING hnsw (embedding vector_cosine_ops);
+```
+
+Example retrieval (with threshold filtering):
 
 ```text
 Query Incident
       ↓
-Generate 1536-dimensional embedding
+Truncate (500/1000/1500 chars) + Generate 1536-dim embedding (validated)
       ↓
-Cosine similarity
+Cosine similarity: 1 - (embedding <=> query) + excludeId
+      ↓
+Filter >0.75 (RAG poisoning prevention)
       ↓
 Historical incidents
 ```
 
-Example similarity results:
+Results:
 
 ```text
-PostgreSQL connection pool exhausted     0.966
-Database connection timeout              0.896
-Database query exceeded timeout          0.733
-Inventory database unavailable           0.721
-Payment provider timeout                 0.718
+PostgreSQL connection pool exhausted     0.966 ✅ included
+Database connection timeout              0.896 ✅ included
+Database query exceeded timeout          0.733 ❌ filtered ( <0.75 )
+Inventory database unavailable           0.721 ❌ filtered
+Payment provider timeout                 0.718 ❌ filtered
 ```
-
-A configurable similarity threshold prevents weak matches from being included in the RAG context.
 
 ---
 
@@ -557,60 +581,32 @@ A configurable similarity threshold prevents weak matches from being included in
 
 TraceMind is designed with production security in mind:
 
-* Environment variables for secrets
-* Input validation
-* Authentication and authorization *(planned)*
-* API rate limiting *(planned)*
-* Secure database access
-* Least-privilege AWS IAM policies
+* Environment variables for secrets (no hardcoding)
+* Zod input validation on all routes
+* **Prompt injection protection** - XML tags `<current>` / `<history>` + sanitization + truncation
+* **LLM output validation** - Zod schema for structured diagnosis
+* **Token safety** - Truncation to prevent token explosion + 8191 limit check
+* **Embedding validation** - 1536 dim check, NaN check, empty array prevention
+* **Rate limit handling** - Retry with exponential backoff on 429
+* **Vector search safety** - Self-exclusion, NULL filtering, threshold filtering
+* Secure database access (Prisma)
+* Least-privilege AWS IAM policies (SQS/SNS)
 * Protection of production logs and sensitive information
-* LLM prompt/data handling controls
+* Authentication and authorization (planned)
+* API rate limiting (planned)
 
 ---
 
-# 📈 Engineering Goals
+# 📈 Engineering Highlights (What makes this production-ready)
 
-TraceMind is designed to demonstrate practical backend and AI engineering concepts:
-
-* Modular backend architecture
-* Type-safe Node.js development
-* REST API design
-* Cursor-based pagination
-* PostgreSQL database design
-* pgvector and vector search
-* Semantic similarity search
-* RAG pipelines
-* LLM integration
-* Event-driven architecture
-* Asynchronous processing
-* Distributed system concepts
-* Caching strategies
-* Real-time streaming
-* Cloud-native AWS architecture
-* Production observability
-* AI cost optimization
-
----
-
-# 🎯 Project Objective
-
-The goal is not simply to build an AI chatbot.
-
-TraceMind is intended to demonstrate how **AI can be integrated into a production-grade backend system** to solve a real engineering problem: reducing the time required to investigate recurring production incidents.
-
-The system combines:
-
-```text
-Traditional Backend Engineering
-              +
-Vector Search
-              +
-RAG
-              +
-LLM Reasoning
-              +
-Event-Driven Architecture
-```
+* **RAG Poisoning Prevention:** Similarity threshold 0.75 filters weak matches
+* **Self-Exclusion:** `excludeId` prevents incident matching itself with 1.0
+* **Prompt Injection Protection:** XML separators + sanitization
+* **Token Management:** Truncation strategy prevents cost explosion
+* **LLM Reliability:** Zod validation + retry logic + low-confidence fallback
+* **Vector Performance:** HNSW index for pgvector cosine search
+* **Async Resilience:** SQS + SNS + DLQ + idempotent workers + error isolation
+* **Modular Architecture:** Fastify + TypeScript + Prisma + clean repository pattern
 
 ---
 
@@ -618,7 +614,7 @@ Event-Driven Architecture
 
 TraceMind is developed incrementally.
 
-Each feature should be:
+Each feature is:
 
 1. Designed
 2. Implemented
@@ -626,43 +622,19 @@ Each feature should be:
 4. Integrated
 5. Documented
 
-The architecture evolves as new requirements are introduced while keeping the core system modular, maintainable, and production-oriented.
-
 ---
 
-# 🗺️ Roadmap
+# 🗺 Roadmap
 
 ```text
-Phase 1
-Backend Foundation
-        ↓
-Phase 2
-PostgreSQL + pgvector
-        ↓
-Phase 3
-Incident Management
-        ↓
-Phase 4
-Semantic Search
-        ↓
-Phase 5
-RAG + AI Diagnosis       ← CURRENT
-        ↓
-Phase 6
-Redis + Performance
-        ↓
-Phase 7
-AWS SQS/SNS + Workers
-        ↓
-Phase 8
-SSE Streaming
-        ↓
-Phase 9
-React Dashboard
-        ↓
-Phase 10
-Production Deployment
+Phase 1 Backend Foundation ✅
+Phase 2 PostgreSQL + pgvector ✅
+Phase 3 Incident Management ✅
+Phase 4 Semantic Search ✅ (HNSW + threshold + self-exclusion)
+Phase 5 RAG + AI Diagnosis ✅ (hardened + Zod + injection protection)
+Phase 6 Redis + Performance 🔄 (HNSW done, Redis next)
+Phase 7 AWS SQS/SNS + Workers ✅ SHIPPED (SQS + DLQ + idempotent)
+Phase 8 SSE Streaming 📋
+Phase 9 React Dashboard 📋 NEXT
+Phase 10 Production Deployment 📋
 ```
-
----
-
