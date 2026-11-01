@@ -20,7 +20,7 @@ export class IncidentService {
         this.eventPublisher = new EventPublisher();
     }
 
-    async createIncident(data: CreateIncidentInput) {
+    async createIncident(data: CreateIncidentInput) {        
         const incident = await this.incidentRepository.create(data);
         const event: IncidentCreatedEvent = {
             eventId: randomUUID(),

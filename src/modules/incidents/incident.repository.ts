@@ -4,6 +4,7 @@ import type { CreateIncidentInput, GetIncidentsFilters, UpdateIncidentInput } fr
 
 export class IncidentRepository {
   async create(data: CreateIncidentInput) {
+    console.log("Creating incident with data:", data); // Debugging line
     return prisma.incident.create({
       data: {
         serviceName: data.serviceName,
@@ -11,6 +12,7 @@ export class IncidentRepository {
         errorMessage: data.errorMessage,
         stackTrace: data.stackTrace,
         logs: data.logs,
+        severity:data.severity
       },
     });
   }

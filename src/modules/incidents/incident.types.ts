@@ -4,6 +4,7 @@ export interface CreateIncidentInput {
   errorMessage: string;
   stackTrace?: string;
   logs?: string;
+  severity?: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 }
 
 export interface UpdateIncidentInput {

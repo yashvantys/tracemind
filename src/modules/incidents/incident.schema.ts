@@ -20,6 +20,14 @@ export const createIncidentSchema = z.object({
   logs: z
     .string()
     .optional(),
+
+    severity: z
+    .enum(["LOW", "MEDIUM", "HIGH", "CRITICAL"])
+    .optional(),
+
+    status: z
+    .enum(["OPEN", "INVESTIGATING", "RESOLVED"])
+    .optional(),
 });
 
 export type CreateIncidentRequest = z.infer<

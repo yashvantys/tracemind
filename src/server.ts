@@ -5,11 +5,11 @@ const app = buildApp();
 const start = async () => {
   try {
     await app.listen({
-      port: 3000,
+      port: 4000,
       host: "0.0.0.0",
     });
 
-    console.log("TraceMind server running on port 3000");
+    console.log("TraceMind server running on port 4000");
   } catch (error) {
     app.log.error(error);
     process.exit(1);
