@@ -1,87 +1,72 @@
 import OpenAI from "openai";
-
+import { z } from "zod";
 import { env } from "../../config/env.js";
 import { EmbeddingService } from "../embeddings/embedding.service.js";
 import { buildRagPrompt } from "./rag.prompt.js";
-import type {
-  RagAnalysis,
-  RagInput,
-} from "./rag.types.js";
+import type { RagAnalysis, RagInput } from "./rag.types.js";
 
-const openai = new OpenAI({
-  apiKey: env.OPENAI_API_KEY,
+const openai = new OpenAI({ apiKey: env.OPENAI_API_KEY });
+
+const RagSchema = z.object({
+  rootCause: z.string(),
+  evidence: z.array(z.string()),
+  remediation: z.array(z.string()),
+  confidence: z.number().min(0).max(1)
 });
 
 export class RagService {
-  private readonly embeddingService: EmbeddingService;
+  private readonly embeddingService = new EmbeddingService();
 
-  constructor() {
-    this.embeddingService = new EmbeddingService();
-  }
-
-  async analyzeIncident(
-    incident: RagInput,
-  ): Promise<RagAnalysis> {
-
-    // 1. Find similar historical incidents
-    const similarIncidents =
-      await this.embeddingService.findSimilarIncidents(
-        incident,
-        env.RAG_MAX_RESULTS,
-      );
-
-    // 2. Build RAG prompt
-    const prompt = buildRagPrompt(
+  async analyzeIncident(incident: RagInput): Promise<RagAnalysis> {
+    const similarIncidents = await this.embeddingService.findSimilarIncidents(
       incident,
-      similarIncidents,
+      env.RAG_MAX_RESULTS,
     );
 
-    // 3. Ask OpenAI for analysis
+    const filtered = similarIncidents.filter(s => Number(s.similarity) > 0.75);
+
+    if (filtered.length === 0) {
+      return {
+        rootCause: "No relevant historical incidents",
+        evidence: [],
+        remediation: ["Check recent deploys", "Check logs"],
+        confidence: 0.3,
+        similarIncidents: []
+      };
+    }
+
+    const prompt = buildRagPrompt(incident, filtered); // USE FILTERED
+
     const response = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       temperature: 0.2,
-      response_format: {
-        type: "json_object",
-      },
+      response_format: { type: "json_object" },
       messages: [
-        {
-          role: "system",
-          content:
-            "You are TraceMind, a production incident analysis assistant.",
-        },
-        {
-          role: "user",
-          content: prompt,
-        },
+        { role: "system", content: "You are TraceMind. Analyze ONLY provided context. Return JSON with rootCause, evidence[], remediation[], confidence." },
+        { role: "user", content: prompt }
       ],
     });
 
-    const content =
-      response.choices[0]?.message.content;
+    const content = response.choices[0]?.message.content;
+    if (!content) throw new Error("AI returned empty analysis");
 
-    if (!content) {
-      throw new Error(
-        "AI returned an empty analysis",
-      );
+    // Zod validation - prevents crash
+    const parsed = RagSchema.safeParse(JSON.parse(content));
+    if (!parsed.success) {
+      throw new Error(`Invalid AI JSON: ${parsed.error.message}`);
     }
 
-    // 4. Parse AI response
-    const analysis = JSON.parse(content) as Omit<
-      RagAnalysis,
-      "similarIncidents"
-    >;
+    // Cost tracking
+    console.log(`Tokens: ${response.usage?.prompt_tokens} -> ${response.usage?.completion_tokens}`);
 
-    // 5. Add database retrieval information
     return {
-      ...analysis,
-      similarIncidents: similarIncidents.map(
-        (incident) => ({
-          incidentId: incident.id,
-          similarity: Number(incident.similarity),
-          serviceName: incident.serviceName,
-          errorMessage: incident.errorMessage,
-        }),
-      ),
+      ...parsed.data,
+      similarIncidents: filtered.map(i => ({
+        incidentId: i.id,
+        similarity: Number(i.similarity),
+        serviceName: i.serviceName,
+        errorMessage: i.errorMessage,
+      })),
     };
   }
 }
