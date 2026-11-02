@@ -1,46 +1,50 @@
-import axios from 'axios';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-
-export const api = axios.create({
-    baseURL: `${API_BASE}/api/v1`,
-    timeout: 15000,
-});
-
-export interface Incident {
-    id: string;
-    errorMessage: string;
-    stackTrace?: string;
-    serviceName: string;
-    environment: string;
-    severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
-    status: 'OPEN' | 'INVESTIGATING' | 'RESOLVED' | string;
-    createdAt: string;
+export interface ApiResponse {
+    incidents: any[];
+    pagination?: { nextCursor: string | null; hasNextPage: boolean };
 }
 
-export interface SimilarIncident {
-    id: string;
-    errorMessage: string;
-    serviceName: string;
-    similarity: number;
-}
+export const api = {
+    base: API_BASE,
 
-export interface Diagnosis {
-    rootCause: string;
-    evidence: string[];
-    remediation: string[];
-    confidence: number;
-    similarIncidents?: SimilarIncident[];
-}
+    async fetchIncidents(cursor?: string): Promise<ApiResponse> {
+        const url = cursor
+            ? `${API_BASE}/api/v1/incidents?limit=10&cursor=${cursor}`
+            : `${API_BASE}/api/v1/incidents?limit=10`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+        const data = json.data || json;
+        return {
+            incidents: data.incidents || [],
+            pagination: data.pagination || { nextCursor: null, hasNextPage: false },
+        };
+    },
 
-export async function fetchIncidents(): Promise<Incident[]> {
-    const { data } = await api.get('/incidents?limit=10');
-    // Your API returns { success: true, data: { incidents, pagination } }
-    return data.data?.incidents || data.incidents || [];
-}
+    async deleteIncident(id: string) {
+        const res = await fetch(`${API_BASE}/api/v1/incidents/${id}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error(`Delete failed ${res.status}`);
+        return res;
+    },
 
-export async function analyzeIncident(id: string): Promise<Diagnosis> {
-    const { data } = await api.post(`/incidents/${id}/analyze`);
-    // Your API returns { success: true, data: { rootCause, evidence... } }
-    return data.data || data;
-}
+    async updateIncident(id: string, data: any) {
+        const res = await fetch(`${API_BASE}/api/v1/incidents/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+        });
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.error?.message || `Update failed ${res.status}`);
+        }
+        return res.json();
+    },
+
+    async analyzeIncident(id: string) {
+        const res = await fetch(`${API_BASE}/api/v1/incidents/${id}/analyze`, { method: 'POST' });
+        if (!res.ok) throw new Error(`Analyze failed ${res.status}`);
+        const json = await res.json();
+        return json.data || json;
+    },
+};
