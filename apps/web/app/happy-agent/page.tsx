@@ -89,8 +89,8 @@ export default function HappyAgentPage() {
     const stepIdx = getStepIndex(stage);
 
     return (
-        <div className="min-h-screen bg-[#f6f7f9] flex justify-center overflow-x-hidden">
-            <div className="w-full max-w- mx-3 my-3 sm:mx-4 sm:my-4 bg-white rounded-2xl border shadow-sm flex flex-col h- overflow-hidden">
+        <div className="min-h-screen bg-[#f6f7f9] px-3 py-3 box-border">
+            <div className="w-full max-w-[640px] mx-auto bg-white rounded-2xl border shadow-sm flex flex-col h-[88vh] overflow-hidden box-border">
                 {/* Header */}
                 <div className="p-4 border-b shrink-0">
                     <div className="flex justify-between items-start gap-2">
