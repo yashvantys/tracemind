@@ -637,12 +637,12 @@ TraceMind is designed with production security in mind:
 
 ---
 
-# 🖥 UI Samples — Synthetic Data Only
+# 🖥 UI Samples
 
 > **All data below is SYNTHETIC.** No real customer / patient data. Safe to share publicly.
-> Real frontend: Next.js App Router in `apps/web` — `app/` + `components/` + `hooks/` + `lib/` + `public/` (commit `updated ui`).
+> Real frontend: Next.js App Router in `apps/web` — `app/` + `components/` + `hooks/` + `lib/` + `public/`.
 > Full data: [`tracemind-sample-data.json`](./tracemind-sample-data.json)
-> Visual preview: [`tracemind-ui-preview.html`](./tracemind-ui-preview.html) — open in browser, no backend needed.
+> Visual preview: [`tracemind-ui-preview.html`](./tracemind-ui-preview.html).
 
 ## TraceMind Dashboard — Sample
 
@@ -667,7 +667,7 @@ TraceMind is designed with production security in mind:
 
 ---
 
-## Medica — AI Patient Acquisition — Sample UI
+## Medica — AI Patient Acquisition
 
 Journey: **1 AI Adverts → 2 Lead Captured (consent) → 3 CRM Bitrix24 → 4 AI Contacts → 5 Qualify → 6 Book + Remind → 7 Consultation (human) → 8 Converted**
 
