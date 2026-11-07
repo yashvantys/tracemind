@@ -40,6 +40,14 @@ curl -X POST http://localhost:3000/api/v1/incidents/<id>/analyze
 
 Expected: `rootCause`, `evidence`, `remediation`, `confidence`, `similarIncidents` with similarity e.g. `0.966`.
 
+### Run frontend
+```bash
+cd apps/web
+npm install
+npm run dev
+# Open http://localhost:3000 — Incident dashboard + AI diagnosis view
+```
+
 ## 🎯 Problem
 
 Production debugging often requires engineers to:
@@ -211,8 +219,15 @@ Background Workers
 - REST APIs
 - Server-Sent Events *(planned)*
 
-### Frontend
-- React / Next.js dashboard in `apps/web` — **IN PROGRESS (basic dashboard, expanding)**
+### Frontend ✅ SHIPPED
+- Next.js (App Router) in `apps/web`
+- `app/` — pages / routes (App Router)
+- `components/` — reusable UI components
+- `hooks/` — custom React hooks
+- `lib/` — API client / helpers / utils
+- `public/` — static assets
+- ESLint + `AGENTS.md` + frontend `README.md`
+- Last update: `updated ui` (commit `e06f1a0a`)
 
 ### DevOps / Observability
 - Docker
@@ -261,7 +276,15 @@ tracemind/
 │   ├── app.ts
 │   └── server.ts
 │
-├── apps/web/  # Next.js dashboard (in progress)
+├── apps/web/  # Next.js frontend — SHIPPED
+│   ├── app/         # App Router pages
+│   ├── components/  # Reusable UI components
+│   ├── hooks/       # Custom hooks
+│   ├── lib/         # API client / helpers
+│   ├── public/      # Static assets
+│   ├── AGENTS.md
+│   ├── README.md
+│   └── eslint_config.mjs
 │
 ├── prisma/
 │   ├── schema.prisma
@@ -362,12 +385,14 @@ tracemind/
 - Connection management
 - Error handling
 
-## Phase 9 — Frontend 🔄 IN PROGRESS
-- React / Next.js application in `apps/web`
+## Phase 9 — Frontend ✅ SHIPPED
+- Next.js (App Router) application in `apps/web` — commit `updated ui` (`e06f1a0a`)
+- Structure: `app/` + `components/` + `hooks/` + `lib/` + `public/`
 - Incident dashboard
 - Incident details + AI diagnosis view
 - Evidence display + similarity scores
 - Remediation recommendations
+- Run it: `cd apps/web && npm install && npm run dev`
 
 ## Phase 10 — Production Readiness 📋
 - Authentication
@@ -615,6 +640,7 @@ TraceMind is designed with production security in mind:
 # 🖥 UI Samples — Synthetic Data Only
 
 > **All data below is SYNTHETIC.** No real customer / patient data. Safe to share publicly.
+> Real frontend: Next.js App Router in `apps/web` — `app/` + `components/` + `hooks/` + `lib/` + `public/` (commit `updated ui`).
 > Full data: [`tracemind-sample-data.json`](./tracemind-sample-data.json)
 > Visual preview: [`tracemind-ui-preview.html`](./tracemind-ui-preview.html) — open in browser, no backend needed.
 
@@ -694,6 +720,6 @@ Phase 5 RAG + AI Diagnosis ✅ (hardened + Zod + injection protection)
 Phase 6 Redis + Performance 🔄 (HNSW done, Redis next)
 Phase 7 AWS SQS/SNS + Workers ✅ SHIPPED (SQS + DLQ + idempotent)
 Phase 8 SSE Streaming 📋
-Phase 9 React Dashboard 🔄 IN PROGRESS (apps/web)
+Phase 9 React Dashboard ✅ SHIPPED (apps/web - Next.js App Router)
 Phase 10 Production Deployment 📋
 ```
