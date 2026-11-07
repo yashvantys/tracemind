@@ -609,6 +609,67 @@ TraceMind is designed with production security in mind:
 
 ---
 
+
+---
+
+# 🖥 UI Samples — Synthetic Data Only
+
+> **All data below is SYNTHETIC.** No real customer / patient data. Safe to share publicly.
+> Full data: [`tracemind-sample-data.json`](./tracemind-sample-data.json)
+> Visual preview: [`tracemind-ui-preview.html`](./tracemind-ui-preview.html) — open in browser, no backend needed.
+
+## TraceMind Dashboard — Sample
+
+| Metric | Sample Value |
+| --- | --- |
+| Incidents (7 days) | 128 |
+| Avg investigation time | 42 min → **6 min** with TraceMind |
+| Resolved via AI suggestion | 86 |
+| Avg top-match similarity | 0.91 |
+| Open incidents | 12 (3 critical) |
+
+### Sample Incidents
+
+| Incident | Service / Severity | Top Similar | AI Diagnosis |
+| --- | --- | --- | --- |
+| **Database connection pool exhausted**<br>`inc_001` • 06 Nov, 14:32 | payment-service<br>CRITICAL • RESOLVED | 0.966 — PostgreSQL pool exhausted<br>0.896 — DB connection timeout | **Root cause:** Long transactions not releasing connections<br>**Fix:** Pool 20→50, kill txn_9912, alert at 80%<br>**Confidence:** 0.92 |
+| **WhatsApp webhook timeout**<br>`inc_002` • 07 Nov, 09:15 | lead-ingestion-service<br>HIGH • OPEN | 0.912 — WhatsApp 429 rate limit<br>0.841 — CRM sync delay | **Root cause:** 429 + retry storm, queue 12→480<br>**Fix:** Backoff, move to SQS, DLQ<br>**Confidence:** 0.88 |
+| **OpenAI embeddings 429 — RAG slow**<br>`inc_003` • 05 Nov, 18:40 | rag-service<br>MEDIUM • RESOLVED | 0.934 — Embedding retry exhausted | **Root cause:** Burst, no rate limit<br>**Fix:** Token bucket + batch<br>**Confidence:** 0.90 |
+| **CRM sync failed — lead not in Bitrix24**<br>`inc_004` • 07 Nov, 10:02 | crm-sync-service<br>HIGH • OPEN | 0.889 — Lead missing phone | **Root cause:** Form allowed no phone, CRM requires PHONE<br>**Fix:** Phone required + E.164, fallback flag<br>**Confidence:** 0.85 |
+
+**How it works in UI:** Incident → Similar incidents (pgvector) → AI Diagnosis card (Root Cause / Evidence / Remediation / Confidence) → Action.
+
+---
+
+## Medica — AI Patient Acquisition — Sample UI
+
+Journey: **1 AI Adverts → 2 Lead Captured (consent) → 3 CRM Bitrix24 → 4 AI Contacts → 5 Qualify → 6 Book + Remind → 7 Consultation (human) → 8 Converted**
+
+| Lead (Sample) | Source / Stage | AI Qualification | Next Action |
+| --- | --- | --- | --- |
+| **Priya S. (Sample)**<br>Phone: `+91 98XXX XXXXX` • Consent: Yes | Instagram Ad — Knee Pain<br>Stage 5. Qualify | Score **0.91** • Knee osteoarthritis • Ahmedabad • Budget fit: Yes | Book consultation |
+| **Rahul M. (Sample)**<br>Phone: `+91 98XXX XXXXX` • Consent: Yes | YouTube Ad — Back Pain<br>Stage 6. Book + Remind | Score **0.87** • Lower back pain • Gandhinagar | Send reminder |
+| **Anita K. (Sample)**<br>Phone: `+91 98XXX XXXXX` • Consent: Yes | LinkedIn Ad — Joint Pain<br>Stage 4. AI Contacts | Score — • Awaiting reply | Follow-up WhatsApp in 4h |
+| **Vikram D. (Sample)**<br>Phone: `+91 98XXX XXXXX` • Consent: Yes | Facebook Form<br>Stage 8. Converted | Score **0.94** • Shoulder pain | Handover to clinic team |
+
+### Sample AI WhatsApp Chat — Priya S.
+
+> **AI:** Hi Priya, thanks for your interest in stem cell treatment for knee pain. May I ask how long you have had the pain?
+>
+> **Lead:** About 2 years, worse in mornings.
+>
+> **AI:** Thanks. Have you tried physiotherapy / injections before? I will book you for a doctor consultation if you are eligible.
+
+### Sample Appointment — Rahul M.
+
+- **Date:** 08 Nov, 11:00
+- **Doctor:** Dr. A. (Sample)
+- **Reminder:** Sent ✓
+- **CRM:** Bitrix24 — Synced 4/4 leads
+
+> **Privacy rule for this sample:** Names marked `(Sample)`, phones masked, consent = Yes for all. Never add real names / phones / patient data to this public README.
+
+
 # 📌 Development Approach
 
 TraceMind is developed incrementally.
